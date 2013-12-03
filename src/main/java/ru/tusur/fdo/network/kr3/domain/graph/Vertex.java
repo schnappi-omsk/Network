@@ -61,6 +61,14 @@ public class Vertex implements Comparable<Vertex> {
         edges.add(edge);
     }
 
+    public boolean hasEdgeTo(Vertex vertex){
+        if (vertex == null) return false;
+        for (Edge edge : edges){
+            if (this.equals(edge.getTarget())) return true;
+        }
+        return false;
+    }
+
     @Override
     public int compareTo(Vertex o) {
         return Double.compare(minDistance, o.minDistance);
