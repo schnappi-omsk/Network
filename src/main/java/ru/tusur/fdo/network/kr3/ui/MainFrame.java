@@ -32,6 +32,7 @@ public class MainFrame extends JFrame {
         MenuPanel menu = new MenuPanel(this);
         menu.setPreferredSize(new Dimension(MENU_WIDTH, HEIGHT));
         contentPane.add(menu, BorderLayout.EAST);
+        menu.setListener(graphPanel);
     }
 
 

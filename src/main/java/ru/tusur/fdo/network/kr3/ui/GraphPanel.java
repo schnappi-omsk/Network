@@ -12,7 +12,7 @@ import java.awt.geom.Ellipse2D;
 
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
-import java.util.HashMap;
+import java.util.*;
 
 /**
  * User: oleg
@@ -27,6 +27,20 @@ public class GraphPanel extends JPanel {
 
     public static final int ADD_EDGE_MODE = 2;
 
+    public static final int EDIT_VERTEX_MODE = 3;
+
+    public static final int EDIT_EDGE_MODE = 4;
+
+    public static final String VIEW = "Standard mode";
+
+    public static final String ADD_VERTEX = "Add vertex";
+
+    public static final String ADD_EDGE = "Add edge";
+
+    public static final String EDIT_VERTEX = "Edit vertex";
+
+    public static final String EDIT_EDGE = "Edit edge";
+
     private static final double DIAMETER = 30;
 
     private HashMap<Vertex, Ellipse2D> vertices;
@@ -39,11 +53,14 @@ public class GraphPanel extends JPanel {
 
     private int mode;
 
+    private MouseAdapter mouseListener = new ViewModeMouseHandler();
+
     public GraphPanel(JFrame frame){
         vertices = new HashMap<Vertex, Ellipse2D>();
         edges = new HashMap<Edge, Line2D>();
-        addMouseListener(new ViewModeMouseHandler());
-        addMouseMotionListener(new MouseMotionHandler());
+        addMouseListener(mouseListener);
+        MouseMotionListener mouseMotionListener = new MouseMotionHandler();
+        addMouseMotionListener(mouseMotionListener);
         this.frame = frame;
     }
 
@@ -52,6 +69,14 @@ public class GraphPanel extends JPanel {
     }
 
     public void setMode(int mode) {
+        if (this.mode == mode) return;
+        selected = null;
+        repaint();
+        removeMouseListener(mouseListener);
+        if (mode == VIEW_MODE) mouseListener = new ViewModeMouseHandler();
+        if (mode == ADD_VERTEX_MODE) mouseListener = new AddVertexMouseHandler();
+        if (mode == ADD_EDGE_MODE) mouseListener = new AddEdgeMouseHandler();
+        addMouseListener(mouseListener);
         this.mode = mode;
     }
 
@@ -92,6 +117,7 @@ public class GraphPanel extends JPanel {
     }
 
     public void drawEdge(Vertex from, Vertex to){
+        if (from == null) return;
         if (from.hasEdgeTo(to)) return;
         Ellipse2D ellipseFrom = vertices.get(from);
         if (ellipseFrom == null) return;
@@ -122,23 +148,38 @@ public class GraphPanel extends JPanel {
         }
     }
 
-    private class ViewModeMouseHandler extends MouseAdapter{
+    private class AddVertexMouseHandler extends MouseAdapter{
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            selected = find(e.getPoint());
+            if (selected == null){
+                Vertex vertex = new Vertex("x=" + e.getX() + "y=" + e.getY());
+                add(e.getPoint(), vertex);
+            }
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            mouseClicked(e);
+        }
+
+    }
+
+    private class AddEdgeMouseHandler extends MouseAdapter{
 
         @Override
         public void mouseClicked(MouseEvent e) {
-            Vertex vertexTo;
             Vertex vertexFrom = null;
-            if (selected != null && e.getButton() == MouseEvent.BUTTON3){
+            Vertex vertexTo = null;
+            if (selected != null){
                 vertexFrom = findVertex(selected);
             }
             selected = find(e.getPoint());
-            if (selected == null){
-                vertexTo = new Vertex("x=" + e.getX() + "y=" + e.getY());
-                add(e.getPoint(), vertexTo);
-            } else {
+            if (selected != null && selected != vertices.get(vertexFrom)
+                    && e.getButton() == MouseEvent.BUTTON3){
                 vertexTo = findVertex(selected);
             }
-            if (vertexFrom != null  && e.getButton() == MouseEvent.BUTTON3){
+            if (vertexFrom != null && vertexTo != null){
                 drawEdge(vertexFrom, vertexTo);
             }
         }
@@ -149,23 +190,60 @@ public class GraphPanel extends JPanel {
         }
     }
 
+    private class ViewModeMouseHandler extends MouseAdapter{
+
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            selected = find(e.getPoint());
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            mouseClicked(e);
+        }
+    }
+
     private class MouseMotionHandler implements MouseMotionListener{
+
+        int x;
+
+        int y;
+
+        private void dragAssociated(java.util.List<Edge> edgeList){
+            for (Edge current : edgeList){
+                Vertex associated = current.getTarget();
+                Ellipse2D associatedEllipse = vertices.get(associated);
+                double xTo = associatedEllipse.getCenterX();
+                double yTo = associatedEllipse.getCenterY();
+                Line2D wire = edges.get(current);
+                wire.setLine(x, y, xTo, yTo);
+            }
+        }
+
+        private void dragAssociatedToThis(Vertex vertex){
+            for (Edge current : edges.keySet()){
+                if (current.getTarget() == vertex){
+                    Vertex source = current.getSource();
+                    Ellipse2D ellipse = vertices.get(source);
+                    double xTo = ellipse.getCenterX();
+                    double yTo = ellipse.getCenterY();
+                    Line2D wire = edges.get(current);
+                    wire.setLine(x, y, xTo, yTo);
+                }
+            }
+        }
+
         @Override
         public void mouseDragged(MouseEvent e) {
+            if (mode != VIEW_MODE) return;
             if (selected != null){
-                int x = e.getX();
-                int y = e.getY();
+                x = e.getX();
+                y = e.getY();
                 selected.setFrame(x - DIAMETER / 2, y - DIAMETER / 2, DIAMETER, DIAMETER);
                 Vertex vertex = findVertex(selected);
                 java.util.List<Edge> edgeList = vertex.getEdges();
-                for (Edge current : edgeList){
-                    Vertex associated = current.getTarget();
-                    Ellipse2D associatedEllipse = vertices.get(associated);
-                    double xTo = associatedEllipse.getCenterX();
-                    double yTo = associatedEllipse.getCenterY();
-                    Line2D wire = edges.get(current);
-                    wire.setLine(x,y, xTo, yTo);
-                }
+                dragAssociated(edgeList);
+                dragAssociatedToThis(vertex);
                 repaint();
             }
         }

@@ -29,6 +29,10 @@ public class Vertex implements Comparable<Vertex> {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public Vertex getPrevious() {
         return previous;
     }
@@ -59,6 +63,7 @@ public class Vertex implements Comparable<Vertex> {
 
     public void addEdge(Edge edge){
         edges.add(edge);
+        edge.setSource(this);
     }
 
     public boolean hasEdgeTo(Vertex vertex){

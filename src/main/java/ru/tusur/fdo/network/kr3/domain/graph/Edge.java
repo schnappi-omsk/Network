@@ -11,6 +11,8 @@ public class Edge {
 
     private Vertex target;
 
+    private Vertex source;
+
     public Edge(final Vertex target, final double weight) {
         this.target = target;
         this.weight = weight;
@@ -22,6 +24,14 @@ public class Edge {
 
     public void setTarget(Vertex target) {
         this.target = target;
+    }
+
+    public Vertex getSource() {
+        return source;
+    }
+
+    public void setSource(Vertex source){
+        this.source = source;
     }
 
     public double getWeight() {

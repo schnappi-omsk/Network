@@ -17,26 +17,30 @@ public class MenuPanel extends JPanel {
 
     public static final int MENU_HEIGHT = 400;
 
-    public static final String VIEW = "Standard mode";
-
-    public static final String ADD_VERTEX = "Add vertex";
-
-    public static final String ADD_EDGE = "Add edge";
-
     private HashMap<Integer, JRadioButton> buttons = new HashMap<Integer, JRadioButton>();
 
     private final JFrame frame;
+
+    private GraphPanel listener;
+
+    public void setListener(GraphPanel listener) {
+        this.listener = listener;
+    }
 
     public MenuPanel(JFrame frame){
         this.frame = frame;
         setLayout(new GridLayout(0, 1));
 
-        JRadioButton standard = new JRadioButton(VIEW);
+        JRadioButton standard = new JRadioButton(GraphPanel.VIEW);
         buttons.put(GraphPanel.VIEW_MODE, standard);
-        JRadioButton addVertex= new JRadioButton(ADD_VERTEX);
+        JRadioButton addVertex= new JRadioButton(GraphPanel.ADD_VERTEX);
         buttons.put(GraphPanel.ADD_VERTEX_MODE, addVertex);
-        JRadioButton addEdge = new JRadioButton(ADD_EDGE);
+        JRadioButton addEdge = new JRadioButton(GraphPanel.ADD_EDGE);
         buttons.put(GraphPanel.ADD_EDGE_MODE, addEdge);
+        JRadioButton editVertex = new JRadioButton(GraphPanel.EDIT_VERTEX);
+        buttons.put(GraphPanel.EDIT_VERTEX_MODE, editVertex);
+        JRadioButton editEdge = new JRadioButton(GraphPanel.EDIT_EDGE);
+        buttons.put(GraphPanel.EDIT_EDGE_MODE, editEdge);
 
         ActionListener listener = new MenuItemHandler();
         JPanel radioPanel = new JPanel(new GridLayout(0,1));
@@ -52,8 +56,9 @@ public class MenuPanel extends JPanel {
         }
         add(radioPanel);
 
-        JPanel bottomPanel = new JPanel();
+        JPanel bottomPanel = new JPanel(new GridLayout(0, 1));
         bottomPanel.setPreferredSize(new Dimension(MENU_WIDTH, 200));
+
         add(bottomPanel);
 
     }
@@ -70,7 +75,7 @@ public class MenuPanel extends JPanel {
     private class MenuItemHandler implements ActionListener{
         @Override
         public void actionPerformed(ActionEvent e) {
-            frame.setTitle(frame.getTitle() + ": " + getMode((JRadioButton) e.getSource()));
+            listener.setMode(getMode((JRadioButton) e.getSource()));
         }
     }
 
