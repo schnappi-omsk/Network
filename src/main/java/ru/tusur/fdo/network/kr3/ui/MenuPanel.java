@@ -19,7 +19,7 @@ public class MenuPanel extends JPanel {
 
     private HashMap<Integer, JRadioButton> buttons = new HashMap<Integer, JRadioButton>();
 
-    private final JFrame frame;
+    private final MainFrame frame;
 
     private GraphPanel listener;
 
@@ -27,7 +27,7 @@ public class MenuPanel extends JPanel {
         this.listener = listener;
     }
 
-    public MenuPanel(JFrame frame){
+    public MenuPanel(MainFrame frame){
         this.frame = frame;
         setLayout(new GridLayout(0, 1));
 
@@ -41,6 +41,8 @@ public class MenuPanel extends JPanel {
         buttons.put(GraphPanel.EDIT_VERTEX_MODE, editVertex);
         JRadioButton editEdge = new JRadioButton(GraphPanel.EDIT_EDGE);
         buttons.put(GraphPanel.EDIT_EDGE_MODE, editEdge);
+        JRadioButton removeVertex = new JRadioButton(GraphPanel.REMOVE_VERTEX);
+        buttons.put(GraphPanel.REMOVE_VERTEX_MODE, removeVertex);
 
         ActionListener listener = new MenuItemHandler();
         JPanel radioPanel = new JPanel(new GridLayout(0,1));
@@ -56,7 +58,7 @@ public class MenuPanel extends JPanel {
         }
         add(radioPanel);
 
-        JPanel bottomPanel = new JPanel(new GridLayout(0, 1));
+        JPanel bottomPanel = new EditPanel(frame);
         bottomPanel.setPreferredSize(new Dimension(MENU_WIDTH, 200));
 
         add(bottomPanel);

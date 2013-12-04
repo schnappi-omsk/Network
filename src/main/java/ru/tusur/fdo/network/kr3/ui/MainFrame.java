@@ -18,12 +18,13 @@ public class MainFrame extends JFrame {
 
     public static final int MENU_WIDTH = WIDTH - GRAPH_WIDTH;
 
+    private final GraphPanel graphPanel = new GraphPanel(this);
+
     public MainFrame(){
         super("Network");
         setSize(WIDTH, HEIGHT);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
-        GraphPanel graphPanel = new GraphPanel(this);
         graphPanel.setPreferredSize(new Dimension(GRAPH_WIDTH, HEIGHT));
         graphPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         Container contentPane = getContentPane();
@@ -35,6 +36,7 @@ public class MainFrame extends JFrame {
         menu.setListener(graphPanel);
     }
 
-
-
+    public GraphPanel getGraphPanel() {
+        return graphPanel;
+    }
 }
