@@ -34,6 +34,8 @@ public class GraphPanel extends JPanel {
 
     public static final int REMOVE_VERTEX_MODE = 5;
 
+    public static final int REMOVE_EDGE_MODE = 6;
+
     public static final String VIEW = "Standard mode";
 
     public static final String ADD_VERTEX = "Add vertex";
@@ -45,6 +47,8 @@ public class GraphPanel extends JPanel {
     public static final String EDIT_EDGE = "Edit edge";
 
     public static final String REMOVE_VERTEX = "Remove vertex";
+
+    public static final String REMOVE_EDGE = "Remove edge";
 
     private static final double DIAMETER = 30;
 
@@ -84,6 +88,7 @@ public class GraphPanel extends JPanel {
 
     public void setMode(int mode) {
         if (this.mode == mode) return;
+        this.mode = mode;
         selectedVertex = null;
         repaint();
         removeMouseListener(mouseListener);
@@ -91,8 +96,11 @@ public class GraphPanel extends JPanel {
         if (mode == ADD_VERTEX_MODE) mouseListener = new AddVertexMouseHandler();
         if (mode == ADD_EDGE_MODE) mouseListener = new AddEdgeMouseHandler();
         if (mode == REMOVE_VERTEX_MODE) mouseListener = new RemoveVertexMouseHandler();
+        if (mode == EDIT_EDGE_MODE) mouseListener = new EditEdgeMouseHandler();
+        if (mode == EDIT_VERTEX_MODE) mouseListener = new EditVertexMouseHandler();
+        if (mode == REMOVE_EDGE_MODE) mouseListener = new RemoveEdgeMouseHandler();
         addMouseListener(mouseListener);
-        this.mode = mode;
+        editor.setMode();
     }
 
     public void setVertexName(String name){
@@ -137,14 +145,18 @@ public class GraphPanel extends JPanel {
         return null;
     }
 
+    public boolean lineContains(Line2D line, Point2D point){
+        return 5 > Line2D.ptSegDist(
+                line.getX1(), line.getY1(),
+                line.getX2(), line.getY2(),
+                point.getX(), point.getY()
+        );
+    }
+
     public Line2D findEdgeLine(Point2D point){
         for (Edge edge : edges.keySet()){
             Line2D line = edges.get(edge);
-            boolean isPointOnLine = 5 > Line2D.ptSegDist(
-                line.getX1(), line.getY1(),
-                    line.getX2(), line.getY2(),
-                    point.getX(), point.getY()
-            );
+            boolean isPointOnLine = lineContains(line, point);
             if (isPointOnLine){
                 repaint();
                 return line;
@@ -171,11 +183,18 @@ public class GraphPanel extends JPanel {
         return null;
     }
 
-    public void remove(Vertex vertex){
+    public void removeVertex(Vertex vertex){
         if (vertex == null) return;
         if (vertices.get(vertex) == selectedVertex) selectedVertex = null;
         removeVertexEdges(vertex);
         vertices.remove(vertex);
+        repaint();
+    }
+
+    public void removeEdge(Edge edge){
+        if (edge == null) return;
+        if (edges.get(edge) == selectedEdge) selectedEdge = null;
+        edges.remove(edge);
         repaint();
     }
 
@@ -217,17 +236,38 @@ public class GraphPanel extends JPanel {
         Graphics2D g2d = (Graphics2D) g;
         g2d.setPaint(Color.LIGHT_GRAY);
         drawBackground(g2d);
+        Font font = new Font("Serif", Font.PLAIN, 10);
+        FontMetrics metrics = g2d.getFontMetrics(font);
+        g2d.setFont(font);
         for (Edge edge : edges.keySet()){
             Line2D line = edges.get(edge);
             g2d.setStroke(new BasicStroke(2));
             g2d.setPaint(line == selectedEdge ? Colors.SELECTION_COLOR : Colors.DEFAULT_VERTEX_COLOR);
             g2d.draw(line);
+            String text = Double.toString(edge.getWeight());
+            int centerX = (int) (line.getX1() + ((line.getX2() - line.getX1()) / 2));
+            int centerY = (int) (line.getY1() + ((line.getY2() - line.getY1()) / 2));
+            double deg = Math.toDegrees(
+                    Math.atan2(centerY - line.getY2(), centerX - line.getX2()) + Math.PI
+            );
+            if ( deg > 90 && deg < 270 ) deg += 180;
+            double angle = Math.toRadians(deg);
+            int textWidth = metrics.stringWidth(text);
+            g2d.rotate(angle, centerX, centerY);
+            g2d.setPaint(Color.BLACK);
+            g2d.drawString(text, centerX - (textWidth / 2), centerY - 5);
+            g2d.rotate(-angle, centerX, centerY);
         }
         for (Vertex vertex : vertices.keySet()){
             Ellipse2D ellipse = vertices.get(vertex);
             g2d.setPaint(ellipse == selectedVertex ? Colors.SELECTION_COLOR : Colors.DEFAULT_VERTEX_COLOR);
             g2d.draw(ellipse);
             g2d.fill(ellipse);
+            g2d.setPaint(Color.BLACK);
+            g2d.drawString(vertex.getName(),
+                (int) ellipse.getCenterX() - (int) DIAMETER,
+                (int) ellipse.getCenterY() - (int) DIAMETER / 2
+            );
         }
     }
 
@@ -322,7 +362,21 @@ public class GraphPanel extends JPanel {
     private class EditEdgeMouseHandler extends MouseAdapter{
         @Override
         public void mouseClicked(MouseEvent e) {
+            selectedEdge = findEdgeLine(e.getPoint());
+            if (selectedEdge != null) onEdgeSelect();
+        }
 
+        @Override
+        public void mousePressed(MouseEvent e) {
+            mouseClicked(e);
+        }
+    }
+
+    private class EditVertexMouseHandler extends MouseAdapter{
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            selectedVertex = findVertexEllipse(e.getPoint());
+            if (selectedVertex != null) onVertexSelect();
         }
 
         @Override
@@ -338,7 +392,25 @@ public class GraphPanel extends JPanel {
                 selectedVertex = findVertexEllipse(e.getPoint());
                 if (selectedVertex != null){
                     Vertex vertex = findVertex(selectedVertex);
-                    remove(vertex);
+                    removeVertex(vertex);
+                }
+            }
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            mouseClicked(e);
+        }
+    }
+
+    private class RemoveEdgeMouseHandler extends MouseAdapter{
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            if (e.getButton() == MouseEvent.BUTTON3){
+                selectedEdge = findEdgeLine(e.getPoint());
+                if (selectedEdge != null){
+                    Edge edge = findEdge(selectedEdge);
+                    removeEdge(edge);
                 }
             }
         }

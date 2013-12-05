@@ -14,17 +14,17 @@ public class EditPanel extends JPanel {
 
     private MainFrame frame;
 
-    private final JLabel vertexLabel = new JLabel("Vertex name:");
+    public static final String EDIT_EDGE = "Edge weight:";
 
-    private final JTextField vertexName = new JTextField();
+    public static final String EDIT_VERTEX = "Vertex name:";
 
-    private final JButton saveVertex = new JButton("Save");
+    private final JLabel editLabel = new JLabel("editLabel");
 
-    private final JLabel edgeLabel = new JLabel("Edge weight:");
+    private final JTextField editField = new JTextField();
 
-    private final JTextField edgeWeight = new JTextField();
+    private final JButton save = new JButton("Save");
 
-    private final JButton saveEdge = new JButton("Save");
+    private ActionListener listener;
 
     public EditPanel(MainFrame frame){
         this.frame = frame;
@@ -38,66 +38,67 @@ public class EditPanel extends JPanel {
 
         add(Box.createRigidArea(new Dimension(0, 5)));
 
-        add(vertexLabel);
+        add(editLabel);
+        editLabel.setVisible(false);
         add(Box.createRigidArea(new Dimension(0, 5)));
 
-        add(vertexName);
+        add(editField);
+        editField.setVisible(false);
         add(Box.createRigidArea(new Dimension(0, 5)));
 
-        add(saveVertex);
-        add(Box.createRigidArea(new Dimension(0, 5)));
-        saveVertex.addActionListener(new VertexSaver());
-
-        add(edgeLabel);
+        add(save);
+        save.setVisible(false);
         add(Box.createRigidArea(new Dimension(0, 5)));
 
-        add(edgeWeight);
-        add(Box.createRigidArea(new Dimension(0, 5)));
-
-        add(saveEdge);
         add(Box.createRigidArea(new Dimension(0, 300)));
-        saveEdge.addActionListener(new EdgeSaver());
 
+    }
+
+    public void setMode(){
+        int mode = frame.getGraphPanel().getMode();
+        boolean editMode = mode == GraphPanel.EDIT_EDGE_MODE || mode == GraphPanel.EDIT_VERTEX_MODE;
+        editLabel.setVisible(editMode);
+        editField.setVisible(editMode);
+        save.setVisible(editMode);
+        save.removeActionListener(listener);
+        if (mode == GraphPanel.EDIT_VERTEX_MODE){
+            editLabel.setText(EDIT_VERTEX);
+            listener = new VertexSaver();
+        }
+        else if (mode == GraphPanel.EDIT_EDGE_MODE) {
+            editLabel.setText(EDIT_EDGE);
+            listener = new EdgeSaver();
+        }
+        save.addActionListener(listener);
     }
 
     public void setVertexName(String name){
-        vertexName.setText(name);
+        editField.setText(name);
     }
 
     public void setEdgeWeight(double weight){
-        edgeWeight.setText(Double.toString(weight));
+        editField.setText(Double.toString(weight));
     }
 
     public void showVertexEditor(){
-        vertexName.setVisible(true);
-        vertexLabel.setVisible(true);
-        saveVertex.setVisible(true);
-        edgeLabel.setVisible(false);
-        edgeWeight.setVisible(false);
-        saveEdge.setVisible(false);
     }
 
     public void showEdgeEditor(){
-        vertexName.setVisible(false);
-        vertexLabel.setVisible(false);
-        saveVertex.setVisible(false);
-        edgeLabel.setVisible(true);
-        edgeWeight.setVisible(true);
-        saveEdge.setVisible(true);
     }
 
     private class VertexSaver implements ActionListener{
         @Override
         public void actionPerformed(ActionEvent e) {
-            if (vertexName.getText().length() > 0)
-                frame.getGraphPanel().setVertexName(vertexName.getText());
+            if (editField.getText().length() > 0)
+                frame.getGraphPanel().setVertexName(editField.getText());
         }
     }
 
     private class EdgeSaver implements ActionListener{
         @Override
         public void actionPerformed(ActionEvent e) {
-            double weight = Double.parseDouble(edgeWeight.getText());
+            if (editField.getText() == null) return;
+            double weight = Double.parseDouble(editField.getText());
             frame.getGraphPanel().setEdgeWeight(weight);
         }
     }

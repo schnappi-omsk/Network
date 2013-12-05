@@ -43,6 +43,8 @@ public class MenuPanel extends JPanel {
         buttons.put(GraphPanel.EDIT_EDGE_MODE, editEdge);
         JRadioButton removeVertex = new JRadioButton(GraphPanel.REMOVE_VERTEX);
         buttons.put(GraphPanel.REMOVE_VERTEX_MODE, removeVertex);
+        JRadioButton removeEdge = new JRadioButton(GraphPanel.REMOVE_EDGE);
+        buttons.put(GraphPanel.REMOVE_EDGE_MODE, removeEdge);
 
         ActionListener listener = new MenuItemHandler();
         JPanel radioPanel = new JPanel(new GridLayout(0,1));
