@@ -45,6 +45,13 @@ public class MenuPanel extends JPanel {
         buttons.put(GraphPanel.REMOVE_VERTEX_MODE, removeVertex);
         JRadioButton removeEdge = new JRadioButton(GraphPanel.REMOVE_EDGE);
         buttons.put(GraphPanel.REMOVE_EDGE_MODE, removeEdge);
+        JRadioButton selectFirst = new JRadioButton(GraphPanel.SELECT_FIRST_VERTEX);
+        buttons.put(GraphPanel.SELECT_FIRST_VERTEX_MODE, selectFirst);
+        JRadioButton selectLast = new JRadioButton(GraphPanel.SELECT_LAST_VERTEX);
+        buttons.put(GraphPanel.SELECT_LAST_VERTEX_MODE, selectLast);
+        JRadioButton findPath = new JRadioButton(GraphPanel.FIND_PATH);
+        buttons.put(GraphPanel.FIND_PATH_MODE, findPath);
+
 
         ActionListener listener = new MenuItemHandler();
         JPanel radioPanel = new JPanel(new GridLayout(0,1));

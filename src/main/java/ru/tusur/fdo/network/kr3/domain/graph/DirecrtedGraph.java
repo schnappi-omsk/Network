@@ -27,13 +27,13 @@ public class DirecrtedGraph {
         v4.addEdge(new Edge(v3, 20));
 
         v5.addEdge(new Edge(v1, 10));
-        v5.addEdge(new Edge(v3, 10));
+        //v5.addEdge(new Edge(v3, 10));
         v5.addEdge(new Edge(v4, 30));
 
         PathFinder dijkstraPath = new Dijkstra(v1);
         System.out.println("Path to v2: " + dijkstraPath.pathTo(v2));
-        System.out.println("Path to v3: " + dijkstraPath.pathTo(v3));
         System.out.println("Path to v4: " + dijkstraPath.pathTo(v4));
+        System.out.println("Path to v3: " + dijkstraPath.pathTo(v3));
         System.out.println("Path to v5: " + dijkstraPath.pathTo(v5));
 
     }

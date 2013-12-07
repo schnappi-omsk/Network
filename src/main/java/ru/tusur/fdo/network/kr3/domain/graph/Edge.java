@@ -1,11 +1,13 @@
 package ru.tusur.fdo.network.kr3.domain.graph;
 
+import java.io.Serializable;
+
 /**
  * User: oleg
  * Date: 30.11.13
  * Time: 14:06
  */
-public class Edge {
+public class Edge implements Serializable {
 
     private double weight;
 

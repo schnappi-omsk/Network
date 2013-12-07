@@ -1,5 +1,6 @@
 package ru.tusur.fdo.network.kr3.domain.graph;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -9,7 +10,7 @@ import java.util.List;
  * Date: 30.11.13
  * Time: 14:06
  */
-public class Vertex implements Comparable<Vertex> {
+public class Vertex implements Comparable<Vertex>, Serializable {
 
     private double weight;
 

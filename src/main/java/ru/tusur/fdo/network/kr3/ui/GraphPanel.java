@@ -1,17 +1,18 @@
 package ru.tusur.fdo.network.kr3.ui;
 
+import ru.tusur.fdo.network.kr3.domain.graph.Dijkstra;
 import ru.tusur.fdo.network.kr3.domain.graph.Edge;
 import ru.tusur.fdo.network.kr3.domain.graph.Vertex;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
+import java.awt.event.*;
 import java.awt.geom.Ellipse2D;
 
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
+import java.io.*;
 import java.util.*;
 import java.util.List;
 
@@ -36,6 +37,12 @@ public class GraphPanel extends JPanel {
 
     public static final int REMOVE_EDGE_MODE = 6;
 
+    public static final int SELECT_FIRST_VERTEX_MODE = 7;
+
+    public static final int SELECT_LAST_VERTEX_MODE = 8;
+
+    public static final int FIND_PATH_MODE = 9;
+
     public static final String VIEW = "Standard mode";
 
     public static final String ADD_VERTEX = "Add vertex";
@@ -50,7 +57,15 @@ public class GraphPanel extends JPanel {
 
     public static final String REMOVE_EDGE = "Remove edge";
 
+    public static final String FIND_PATH = "Shortest path";
+
+    public static final String SELECT_FIRST_VERTEX = "Select first";
+
+    public static final String SELECT_LAST_VERTEX = "Select last";
+
     private static final double DIAMETER = 30;
+
+    private FileNameExtensionFilter fileFilter = new FileNameExtensionFilter("Graph files", "graph");
 
     private HashMap<Vertex, Ellipse2D> vertices;
 
@@ -60,11 +75,23 @@ public class GraphPanel extends JPanel {
 
     private Line2D selectedEdge;
 
+    private List<Vertex> selectedPathVertices = new ArrayList<Vertex>();
+
+    private List<Edge> selectPathEdges = new ArrayList<Edge>();
+
     private JFrame frame;
 
     private EditPanel editor;
 
     private int mode;
+
+    private Vertex vertexSource;
+
+    private Vertex vertexTarget;
+
+    private JButton save = new JButton("Сохранить");
+
+    private JButton open = new JButton("Открыть");
 
     private MouseAdapter mouseListener = new ViewModeMouseHandler();
 
@@ -75,7 +102,16 @@ public class GraphPanel extends JPanel {
         MouseMotionListener mouseMotionListener = new MouseMotionHandler();
         addMouseMotionListener(mouseMotionListener);
         setBackground(Color.WHITE);
+        setLayout(null);
         this.frame = frame;
+        int buttonW = 120;
+        int buttonH = 20;
+        open.setBounds(0, 0, buttonW, buttonH);
+        save.setBounds(buttonW, 0, buttonW, buttonH);
+        open.addActionListener(new GraphOpener());
+        save.addActionListener(new GraphSaver());
+        add(open);
+        add(save);
     }
 
     public void setEditor(EditPanel editor) {
@@ -99,6 +135,9 @@ public class GraphPanel extends JPanel {
         if (mode == EDIT_EDGE_MODE) mouseListener = new EditEdgeMouseHandler();
         if (mode == EDIT_VERTEX_MODE) mouseListener = new EditVertexMouseHandler();
         if (mode == REMOVE_EDGE_MODE) mouseListener = new RemoveEdgeMouseHandler();
+        if (mode == FIND_PATH_MODE) drawPath();
+        if (mode == SELECT_FIRST_VERTEX_MODE) mouseListener = new SelectFirstMouseHandler();
+        if (mode == SELECT_LAST_VERTEX_MODE) mouseListener = new SelectLastMouseHandler();
         addMouseListener(mouseListener);
         editor.setMode();
     }
@@ -128,9 +167,7 @@ public class GraphPanel extends JPanel {
     public void add(Point2D point, Vertex vertex){
         double x = point.getX();
         double y = point.getY();
-
         selectedVertex = new Ellipse2D.Double(x, y, DIAMETER, DIAMETER);
-        vertices.put(vertex, selectedVertex);
         repaint();
     }
 
@@ -230,6 +267,34 @@ public class GraphPanel extends JPanel {
         repaint();
     }
 
+    public void drawPath(){
+        selectedPathVertices = null;
+        Dijkstra pathFinder = new Dijkstra();
+        if (vertexSource != null && vertexTarget != null){
+            setInitialDistances();
+            pathFinder.setSource(vertexSource);
+            selectedPathVertices = pathFinder.pathTo(vertexTarget);
+            selectPathEdges.clear();
+            for (Vertex current : selectedPathVertices){
+                if (current.getPrevious() == null) continue;
+                List<Edge> edgeList = current.getPrevious().getEdges();
+                for (Edge edge : edgeList){
+                    if (edge.getTarget() == current) selectPathEdges.add(edge);
+                }
+            }
+            repaint();
+            vertexSource = null;
+            vertexTarget = null;
+            pathFinder = null;
+        }
+    }
+
+    private void setInitialDistances(){
+        for (Vertex vertex : vertices.keySet()){
+            vertex.setMinDistance(Double.MAX_VALUE);
+        }
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -241,8 +306,12 @@ public class GraphPanel extends JPanel {
         g2d.setFont(font);
         for (Edge edge : edges.keySet()){
             Line2D line = edges.get(edge);
-            g2d.setStroke(new BasicStroke(2));
-            g2d.setPaint(line == selectedEdge ? Colors.SELECTION_COLOR : Colors.DEFAULT_VERTEX_COLOR);
+            g2d.setStroke(new BasicStroke(1));
+            Color color;
+            if (selectPathEdges.contains(edge)){
+                color = Colors.PATH_COLOR;
+            } else color = line == selectedEdge ? Colors.SELECTION_COLOR : Colors.DEFAULT_VERTEX_COLOR;
+            g2d.setPaint(color);
             g2d.draw(line);
             String text = Double.toString(edge.getWeight());
             int centerX = (int) (line.getX1() + ((line.getX2() - line.getX1()) / 2));
@@ -260,7 +329,12 @@ public class GraphPanel extends JPanel {
         }
         for (Vertex vertex : vertices.keySet()){
             Ellipse2D ellipse = vertices.get(vertex);
-            g2d.setPaint(ellipse == selectedVertex ? Colors.SELECTION_COLOR : Colors.DEFAULT_VERTEX_COLOR);
+            Color color;
+            if (selectedPathVertices != null && selectedPathVertices.contains(vertex)
+                    || vertex == vertexSource || vertex == vertexTarget){
+                color = Colors.PATH_COLOR;
+            } else color = ellipse == selectedVertex ? Colors.SELECTION_COLOR : Colors.DEFAULT_VERTEX_COLOR;
+            g2d.setPaint(color);
             g2d.draw(ellipse);
             g2d.fill(ellipse);
             g2d.setPaint(Color.BLACK);
@@ -276,7 +350,7 @@ public class GraphPanel extends JPanel {
         int horizontal = getWidth() * 2 / squareSide;
         int vertical = getHeight() * 2 / squareSide;
         int x = 0;
-        int y = 0;
+        int y = 20;
         for (int horizontalCounter = 0; horizontalCounter < horizontal; horizontalCounter++ ){
             for (int verticalCounter = 0; verticalCounter < vertical; verticalCounter++){
                 g.drawRect(x, y, squareSide, squareSide);
@@ -293,6 +367,93 @@ public class GraphPanel extends JPanel {
 
     private void onEdgeSelect(){
         editor.setEdgeWeight(getEdgeWeight());
+    }
+
+    private void clearPath(){
+        vertexSource = null;
+        vertexTarget = null;
+        selectedPathVertices = null;
+        selectPathEdges.clear();
+    }
+
+    private class GraphSaver implements ActionListener{
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            JFileChooser fileDialog = new JFileChooser();
+            fileDialog.setFileFilter(fileFilter);
+            int ret = fileDialog.showDialog(null, "Save graph");
+            if (ret == JFileChooser.APPROVE_OPTION){
+                File file = fileDialog.getSelectedFile();
+                try {
+                    FileOutputStream out = new FileOutputStream(file);
+                    ObjectOutputStream mapOut = new ObjectOutputStream(out);
+                    mapOut.writeObject(vertices);
+                    mapOut.writeObject(edges);
+                    mapOut.close();
+                    out.close();
+                } catch (FileNotFoundException e1) {
+                    e1.printStackTrace();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private class GraphOpener implements ActionListener{
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            JFileChooser fileDialog = new JFileChooser();
+            fileDialog.setFileFilter(fileFilter);
+            int ret = fileDialog.showDialog(null, "Open graph");
+            if (ret == JFileChooser.APPROVE_OPTION){
+                File file = fileDialog.getSelectedFile();
+                try {
+                    FileInputStream in = new FileInputStream(file);
+                    ObjectInputStream mapIn = new ObjectInputStream(in);
+                    vertices = (HashMap<Vertex, Ellipse2D>) mapIn.readObject();
+                    edges = (HashMap<Edge, Line2D>) mapIn.readObject();
+                } catch (FileNotFoundException e1) {
+                    e1.printStackTrace();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                } catch (ClassNotFoundException e1) {
+                    e1.printStackTrace();
+                }
+                repaint();
+            }
+        }
+    }
+
+    private class SelectFirstMouseHandler extends MouseAdapter{
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            selectedVertex = findVertexEllipse(e.getPoint());
+            if (selectedVertex != null){
+                clearPath();
+                vertexSource = findVertex(selectedVertex);
+            }
+            else vertexSource = null;
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            mouseClicked(e);
+        }
+    }
+
+    private class SelectLastMouseHandler extends MouseAdapter{
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            selectedVertex = findVertexEllipse(e.getPoint());
+            if (selectedVertex != null) vertexTarget = findVertex(selectedVertex);
+            else vertexTarget = null;
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            mouseClicked(e);
+        }
     }
 
     private class AddVertexMouseHandler extends MouseAdapter{
@@ -363,7 +524,10 @@ public class GraphPanel extends JPanel {
         @Override
         public void mouseClicked(MouseEvent e) {
             selectedEdge = findEdgeLine(e.getPoint());
-            if (selectedEdge != null) onEdgeSelect();
+            if (selectedEdge != null){
+                clearPath();
+                onEdgeSelect();
+            }
         }
 
         @Override
@@ -376,7 +540,10 @@ public class GraphPanel extends JPanel {
         @Override
         public void mouseClicked(MouseEvent e) {
             selectedVertex = findVertexEllipse(e.getPoint());
-            if (selectedVertex != null) onVertexSelect();
+            if (selectedVertex != null){
+                clearPath();
+                onVertexSelect();
+            }
         }
 
         @Override
@@ -391,6 +558,7 @@ public class GraphPanel extends JPanel {
             if (e.getButton() == MouseEvent.BUTTON3){
                 selectedVertex = findVertexEllipse(e.getPoint());
                 if (selectedVertex != null){
+                    if (selectedPathVertices.contains(findVertex(selectedVertex))) clearPath();
                     Vertex vertex = findVertex(selectedVertex);
                     removeVertex(vertex);
                 }
@@ -409,6 +577,7 @@ public class GraphPanel extends JPanel {
             if (e.getButton() == MouseEvent.BUTTON3){
                 selectedEdge = findEdgeLine(e.getPoint());
                 if (selectedEdge != null){
+                    if (selectPathEdges.contains(findEdge(selectedEdge))) clearPath();
                     Edge edge = findEdge(selectedEdge);
                     removeEdge(edge);
                 }

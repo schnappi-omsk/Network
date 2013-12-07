@@ -13,4 +13,6 @@ public class Colors {
 
     public static final Color SELECTION_COLOR = Color.BLUE;
 
+    public static final Color PATH_COLOR = Color.GREEN;
+
 }

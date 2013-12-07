@@ -18,7 +18,23 @@ public class Dijkstra implements PathFinder {
         this.source = source;
     }
 
+    public Dijkstra(){}
+
+    public void setSource(Vertex source) {
+        this.source = source;
+    }
+
+    private void clearPath(Vertex vertex){
+        vertex.setPrevious(null);
+        for (Edge current : vertex.getEdges()){
+            Vertex v = current.getTarget();
+            v.setPrevious(null);
+            clearPath(v);
+        }
+    }
+
     private void computePaths(){
+        source.setPrevious(null);
         source.setMinDistance(0.);
         PriorityQueue<Vertex> vertices = new PriorityQueue<Vertex>();
         vertices.add(source);

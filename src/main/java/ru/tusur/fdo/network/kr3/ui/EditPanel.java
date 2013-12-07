@@ -80,17 +80,12 @@ public class EditPanel extends JPanel {
         editField.setText(Double.toString(weight));
     }
 
-    public void showVertexEditor(){
-    }
-
-    public void showEdgeEditor(){
-    }
-
     private class VertexSaver implements ActionListener{
         @Override
         public void actionPerformed(ActionEvent e) {
             if (editField.getText().length() > 0)
                 frame.getGraphPanel().setVertexName(editField.getText());
+            frame.getGraphPanel().repaint();
         }
     }
 
@@ -100,6 +95,7 @@ public class EditPanel extends JPanel {
             if (editField.getText() == null) return;
             double weight = Double.parseDouble(editField.getText());
             frame.getGraphPanel().setEdgeWeight(weight);
+            frame.getGraphPanel().repaint();
         }
     }
 
