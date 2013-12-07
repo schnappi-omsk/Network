@@ -12,6 +12,8 @@ import java.util.List;
  */
 public class Vertex implements Comparable<Vertex>, Serializable {
 
+    static final long serialVersionUID = 4290176520147727722L;
+
     private double weight;
 
     private List<Edge> edges = new ArrayList<Edge>();
@@ -54,7 +56,7 @@ public class Vertex implements Comparable<Vertex>, Serializable {
         return weight;
     }
 
-    public void setWeight(int weight) {
+    public void setWeight(double weight) {
         this.weight = weight;
     }
 

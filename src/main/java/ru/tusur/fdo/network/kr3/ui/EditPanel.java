@@ -14,15 +14,23 @@ public class EditPanel extends JPanel {
 
     private MainFrame frame;
 
-    public static final String EDIT_EDGE = "Edge weight:";
+    public static final String EDIT_EDGE = "Пропускная способность:";
 
-    public static final String EDIT_VERTEX = "Vertex name:";
+    public static final String EDIT_VERTEX = "Имя узла:";
+
+    public static final String VERTEX_WEIGHT = "Внутренний трафик:";
 
     private final JLabel editLabel = new JLabel("editLabel");
 
     private final JTextField editField = new JTextField();
 
-    private final JButton save = new JButton("Save");
+    private final JLabel secondaryEditLabel = new JLabel(VERTEX_WEIGHT);
+
+    private final JTextField secondaryEditField = new JTextField();
+
+    private final JButton save = new JButton("Сохранить");
+
+    private final JTextArea message = new JTextArea();
 
     private ActionListener listener;
 
@@ -46,19 +54,43 @@ public class EditPanel extends JPanel {
         editField.setVisible(false);
         add(Box.createRigidArea(new Dimension(0, 5)));
 
+        add(secondaryEditLabel);
+        secondaryEditLabel.setVisible(false);
+        add(Box.createRigidArea(new Dimension(0, 5)));
+
+        add(secondaryEditField);
+        secondaryEditField.setVisible(false);
+        add(Box.createRigidArea(new Dimension(0, 5)));
+
         add(save);
         save.setVisible(false);
         add(Box.createRigidArea(new Dimension(0, 5)));
+
+        message.setEditable(false);
+        message.setBackground(null);
+        message.setFocusable(false);
+        message.setLineWrap(true);
+        message.setWrapStyleWord(true);
+        message.setBorder(null);
+        add(message);
 
         add(Box.createRigidArea(new Dimension(0, 300)));
 
     }
 
+    public void setMessage(String text){
+        message.setText(text);
+        repaint();
+    }
+
     public void setMode(){
         int mode = frame.getGraphPanel().getMode();
         boolean editMode = mode == GraphPanel.EDIT_EDGE_MODE || mode == GraphPanel.EDIT_VERTEX_MODE;
+        boolean vertexEdit = mode == GraphPanel.EDIT_VERTEX_MODE;
         editLabel.setVisible(editMode);
         editField.setVisible(editMode);
+        secondaryEditLabel.setVisible(vertexEdit);
+        secondaryEditField.setVisible(vertexEdit);
         save.setVisible(editMode);
         save.removeActionListener(listener);
         if (mode == GraphPanel.EDIT_VERTEX_MODE){
@@ -76,6 +108,10 @@ public class EditPanel extends JPanel {
         editField.setText(name);
     }
 
+    public void setVertexWeight(double weight){
+        secondaryEditField.setText(String.valueOf(weight));
+    }
+
     public void setEdgeWeight(double weight){
         editField.setText(Double.toString(weight));
     }
@@ -85,6 +121,10 @@ public class EditPanel extends JPanel {
         public void actionPerformed(ActionEvent e) {
             if (editField.getText().length() > 0)
                 frame.getGraphPanel().setVertexName(editField.getText());
+            if (secondaryEditField.getText().length() > 0){
+                double weight = Double.parseDouble(secondaryEditField.getText());
+                frame.getGraphPanel().setVertexWeight(weight);
+            }
             frame.getGraphPanel().repaint();
         }
     }

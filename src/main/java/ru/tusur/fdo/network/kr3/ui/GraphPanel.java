@@ -3,6 +3,7 @@ package ru.tusur.fdo.network.kr3.ui;
 import ru.tusur.fdo.network.kr3.domain.graph.Dijkstra;
 import ru.tusur.fdo.network.kr3.domain.graph.Edge;
 import ru.tusur.fdo.network.kr3.domain.graph.Vertex;
+import ru.tusur.fdo.network.kr3.ui.report.ReportFrame;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -43,29 +44,49 @@ public class GraphPanel extends JPanel {
 
     public static final int FIND_PATH_MODE = 9;
 
-    public static final String VIEW = "Standard mode";
+    public static final String VIEW = "Просмотр";
 
-    public static final String ADD_VERTEX = "Add vertex";
+    public static final String VIEW_MESSAGE = "Можно перемещать узлы, используя мышь";
 
-    public static final String ADD_EDGE = "Add edge";
+    public static final String ADD_VERTEX = "Добавить узел";
 
-    public static final String EDIT_VERTEX = "Edit vertex";
+    public static final String ADD_VERTEX_MESSAGE = "Щелкните на рабочей области для добавления узла";
 
-    public static final String EDIT_EDGE = "Edit edge";
+    public static final String ADD_EDGE = "Добавить канал";
 
-    public static final String REMOVE_VERTEX = "Remove vertex";
+    public static final String ADD_EDGE_MESSAGE = "Выберите источник левой кнопкой мыши, затем приемник правой кнопкой.";
 
-    public static final String REMOVE_EDGE = "Remove edge";
+    public static final String EDIT_VERTEX = "Редактировать узел";
 
-    public static final String FIND_PATH = "Shortest path";
+    public static final String EDIT_VERTEX_MESSAGE = "Щелкните на любом узле для редактирования";
 
-    public static final String SELECT_FIRST_VERTEX = "Select first";
+    public static final String EDIT_EDGE = "Редактировать канал";
 
-    public static final String SELECT_LAST_VERTEX = "Select last";
+    public static final String EDIT_EDGE_MESSAGE = "Щелкните на любом канале для редактирования";
+
+    public static final String REMOVE_VERTEX = "Удалить узел";
+
+    public static final String REMOVE_VERTEX_MESSAGE = "Щелкните правой кнопкой мыши на узле для удаления";
+
+    public static final String REMOVE_EDGE = "Удалить канал";
+
+    public static final String REMOVE_EDGE_MESSAGE = "Щелкните правой кнопкой мыши на канале для удаления";
+
+    public static final String FIND_PATH = "Вычислить путь";
+
+    public static final String FIND_PATH_MESSAGE = "Выберите источник и приемник";
+
+    public static final String SELECT_FIRST_VERTEX = "Выбрать начальный узел";
+
+    public static final String SELECT_FIRST_MESSAGE = "Выберите узел-источник";
+
+    public static final String SELECT_LAST_VERTEX = "Выбрать конечный узел";
+
+    public static final String SELECT_LAST_MESSAGE = "Выберите узел-приемник";
 
     private static final double DIAMETER = 30;
 
-    private FileNameExtensionFilter fileFilter = new FileNameExtensionFilter("Graph files", "graph");
+    private FileNameExtensionFilter fileFilter = new FileNameExtensionFilter("Файлы графов", "graph");
 
     private HashMap<Vertex, Ellipse2D> vertices;
 
@@ -95,6 +116,8 @@ public class GraphPanel extends JPanel {
 
     private JButton clear = new JButton("Очистить");
 
+    private JButton reports = new JButton("Отчеты");
+
     private MouseAdapter mouseListener = new ViewModeMouseHandler();
 
     public GraphPanel(JFrame frame){
@@ -114,9 +137,12 @@ public class GraphPanel extends JPanel {
         open.addActionListener(new GraphOpener());
         save.addActionListener(new GraphSaver());
         clear.addActionListener(new GraphCleaner());
+        reports.setBounds(buttonW * 3, 0, buttonW, buttonH);
+        reports.addActionListener(new ReportOpener());
         add(open);
         add(save);
         add(clear);
+        add(reports);
     }
 
     public void setEditor(EditPanel editor) {
@@ -133,16 +159,48 @@ public class GraphPanel extends JPanel {
         selectedVertex = null;
         repaint();
         removeMouseListener(mouseListener);
-        if (mode == VIEW_MODE) mouseListener = new ViewModeMouseHandler();
-        if (mode == ADD_VERTEX_MODE) mouseListener = new AddVertexMouseHandler();
-        if (mode == ADD_EDGE_MODE) mouseListener = new AddEdgeMouseHandler();
-        if (mode == REMOVE_VERTEX_MODE) mouseListener = new RemoveVertexMouseHandler();
-        if (mode == EDIT_EDGE_MODE) mouseListener = new EditEdgeMouseHandler();
-        if (mode == EDIT_VERTEX_MODE) mouseListener = new EditVertexMouseHandler();
-        if (mode == REMOVE_EDGE_MODE) mouseListener = new RemoveEdgeMouseHandler();
-        if (mode == FIND_PATH_MODE) drawPath();
-        if (mode == SELECT_FIRST_VERTEX_MODE) mouseListener = new SelectFirstMouseHandler();
-        if (mode == SELECT_LAST_VERTEX_MODE) mouseListener = new SelectLastMouseHandler();
+        String message = "";
+        if (mode == VIEW_MODE){
+            mouseListener = new ViewModeMouseHandler();
+            message = VIEW_MESSAGE;
+        }
+        if (mode == ADD_VERTEX_MODE){
+            mouseListener = new AddVertexMouseHandler();
+            message = ADD_VERTEX_MESSAGE;
+        }
+        if (mode == ADD_EDGE_MODE){
+            mouseListener = new AddEdgeMouseHandler();
+            message = ADD_EDGE_MESSAGE;
+        }
+        if (mode == REMOVE_VERTEX_MODE){
+            mouseListener = new RemoveVertexMouseHandler();
+            message = REMOVE_VERTEX_MESSAGE;
+        }
+        if (mode == EDIT_EDGE_MODE){
+            mouseListener = new EditEdgeMouseHandler();
+            message = EDIT_EDGE_MESSAGE;
+        }
+        if (mode == EDIT_VERTEX_MODE){
+            mouseListener = new EditVertexMouseHandler();
+            message = EDIT_VERTEX_MESSAGE;
+        }
+        if (mode == REMOVE_EDGE_MODE){
+            mouseListener = new RemoveEdgeMouseHandler();
+            message = REMOVE_EDGE_MESSAGE;
+        }
+        if (mode == FIND_PATH_MODE){
+            drawPath();
+            message = FIND_PATH_MESSAGE;
+        }
+        if (mode == SELECT_FIRST_VERTEX_MODE){
+            mouseListener = new SelectFirstMouseHandler();
+            message = SELECT_FIRST_MESSAGE;
+        }
+        if (mode == SELECT_LAST_VERTEX_MODE){
+            mouseListener = new SelectLastMouseHandler();
+            message = SELECT_LAST_MESSAGE;
+        }
+        editor.setMessage(message);
         addMouseListener(mouseListener);
         editor.setMode();
     }
@@ -152,10 +210,21 @@ public class GraphPanel extends JPanel {
         vertex.setName(name);
     }
 
+    public void setVertexWeight(double weight){
+        Vertex vertex = findVertex(selectedVertex);
+        vertex.setWeight(weight);
+    }
+
     public String getVertexName(){
         if (selectedVertex == null) return "";
         Vertex vertex = findVertex(selectedVertex);
         return vertex.getName();
+    }
+
+    public double getVertexWeight(){
+        if (selectedVertex == null) return 0.0;
+        Vertex vertex = findVertex(selectedVertex);
+        return vertex.getWeight();
     }
 
     public void setEdgeWeight(double weight){
@@ -391,6 +460,7 @@ public class GraphPanel extends JPanel {
 
     private void onVertexSelect(){
         editor.setVertexName(getVertexName());
+        editor.setVertexWeight(getVertexWeight());
     }
 
     private void onEdgeSelect(){
@@ -674,6 +744,27 @@ public class GraphPanel extends JPanel {
 
         @Override
         public void mouseMoved(MouseEvent e) {
+        }
+    }
+
+    private class ReportOpener implements ActionListener{
+
+        private List<Vertex> getVerticesList(){
+            ArrayList<Vertex> result = new ArrayList<Vertex>();
+            for (Vertex vertex : vertices.keySet()){
+                result.add(vertex);
+            }
+            return Collections.unmodifiableList(result);
+        }
+
+        private List<Vertex> getPath(){
+            return Collections.unmodifiableList(selectedPathVertices);
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            ReportFrame reportFrame = new ReportFrame(getVerticesList(), getPath());
+            reportFrame.setVisible(true);
         }
     }
 
