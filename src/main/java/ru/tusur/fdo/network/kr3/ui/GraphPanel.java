@@ -93,6 +93,8 @@ public class GraphPanel extends JPanel {
 
     private JButton open = new JButton("Открыть");
 
+    private JButton clear = new JButton("Очистить");
+
     private MouseAdapter mouseListener = new ViewModeMouseHandler();
 
     public GraphPanel(JFrame frame){
@@ -108,10 +110,13 @@ public class GraphPanel extends JPanel {
         int buttonH = 20;
         open.setBounds(0, 0, buttonW, buttonH);
         save.setBounds(buttonW, 0, buttonW, buttonH);
+        clear.setBounds(buttonW * 2, 0, buttonW, buttonH);
         open.addActionListener(new GraphOpener());
         save.addActionListener(new GraphSaver());
+        clear.addActionListener(new GraphCleaner());
         add(open);
         add(save);
+        add(clear);
     }
 
     public void setEditor(EditPanel editor) {
@@ -168,6 +173,7 @@ public class GraphPanel extends JPanel {
         double x = point.getX();
         double y = point.getY();
         selectedVertex = new Ellipse2D.Double(x, y, DIAMETER, DIAMETER);
+        vertices.put(vertex, selectedVertex);
         repaint();
     }
 
@@ -259,8 +265,8 @@ public class GraphPanel extends JPanel {
         if (ellipseFrom == null) return;
         Ellipse2D ellipseTo = vertices.get(to);
         if (ellipseTo == null) return;
-        Line2D wire = new Line2D.Double(ellipseFrom.getCenterX(), ellipseFrom.getCenterY(),
-                ellipseTo.getCenterX(), ellipseTo.getCenterY());
+        Line2D wire = new Line2D.Double(ellipseTo.getCenterX(), ellipseTo.getCenterY(),
+                ellipseFrom.getCenterX(), ellipseFrom.getCenterY());
         Edge edge = new Edge(to, 0);
         from.addEdge(edge);
         edges.put(edge, wire);
@@ -285,7 +291,6 @@ public class GraphPanel extends JPanel {
             repaint();
             vertexSource = null;
             vertexTarget = null;
-            pathFinder = null;
         }
     }
 
@@ -299,6 +304,7 @@ public class GraphPanel extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2d.setPaint(Color.LIGHT_GRAY);
         drawBackground(g2d);
         Font font = new Font("Serif", Font.PLAIN, 10);
@@ -306,13 +312,14 @@ public class GraphPanel extends JPanel {
         g2d.setFont(font);
         for (Edge edge : edges.keySet()){
             Line2D line = edges.get(edge);
-            g2d.setStroke(new BasicStroke(1));
+            g2d.setStroke(new BasicStroke((float) 1.3));
             Color color;
             if (selectPathEdges.contains(edge)){
                 color = Colors.PATH_COLOR;
             } else color = line == selectedEdge ? Colors.SELECTION_COLOR : Colors.DEFAULT_VERTEX_COLOR;
             g2d.setPaint(color);
             g2d.draw(line);
+            drawArrowHead(g2d, line);
             String text = Double.toString(edge.getWeight());
             int centerX = (int) (line.getX1() + ((line.getX2() - line.getX1()) / 2));
             int centerY = (int) (line.getY1() + ((line.getY2() - line.getY1()) / 2));
@@ -345,6 +352,27 @@ public class GraphPanel extends JPanel {
         }
     }
 
+    private void drawArrowHead(Graphics2D g, Line2D line){
+        double phi = Math.toRadians(20);
+        double barb = 20;
+        double dx = line.getX1() - line.getX2();
+        double dy = line.getY1() - line.getY2();
+        double theta = Math.atan2(dy, dx);
+        double rho = theta + phi;
+        double distance = Math.sqrt(
+                Math.pow(line.getX2() - line.getX1(), 2) + Math.pow(line.getY2() - line.getY1(), 2)
+        );
+        double r = ( DIAMETER / 2 ) / distance;
+        for (int i = 0; i <2; i++){
+            double xFrom = r * line.getX2() + (1 - r) * line.getX1();
+            double yFrom = r * line.getY2() + (1 - r) * line.getY1();
+            double x = line.getX1() - 1.3*barb * Math.cos(rho);
+            double y = line.getY1() - 1.3*barb * Math.sin(rho);
+            g.drawLine((int) xFrom, (int) yFrom, (int) x, (int) y);
+            rho = theta - phi;
+        }
+    }
+
     private void drawBackground(Graphics2D g){
         int squareSide = 10;
         int horizontal = getWidth() * 2 / squareSide;
@@ -374,6 +402,15 @@ public class GraphPanel extends JPanel {
         vertexTarget = null;
         selectedPathVertices = null;
         selectPathEdges.clear();
+    }
+
+    private class GraphCleaner implements ActionListener{
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            vertices.clear();
+            edges.clear();
+            repaint();
+        }
     }
 
     private class GraphSaver implements ActionListener{
@@ -463,8 +500,8 @@ public class GraphPanel extends JPanel {
             if (selectedVertex == null){
                 Vertex vertex = new Vertex("x=" + e.getX() + "y=" + e.getY());
                 add(e.getPoint(), vertex);
+                onVertexSelect();
             }
-            onVertexSelect();
         }
 
         @Override
@@ -603,7 +640,7 @@ public class GraphPanel extends JPanel {
                 double xTo = associatedEllipse.getCenterX();
                 double yTo = associatedEllipse.getCenterY();
                 Line2D wire = edges.get(current);
-                wire.setLine(x, y, xTo, yTo);
+                wire.setLine(xTo, yTo, x, y);
             }
         }
 
